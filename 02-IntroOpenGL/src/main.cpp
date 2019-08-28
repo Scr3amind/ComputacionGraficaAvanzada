@@ -14,6 +14,12 @@
 int screenWidth;
 int screenHeight;
 
+// Vertices struct
+typedef struct _Vertex {
+	float m_pos[3];
+	float m_color[3];
+} Vertex;
+
 GLFWwindow * window;
 
 bool exitApp = false;
@@ -32,20 +38,27 @@ void destroy();
 bool processInput(bool continueApplication = true);
 
 GLint vertexShaderID, fragmentShaderID, shaderProgramID;
-GLuint VAO, VBO;
+//Variables para VAOs,VBOs,EBOs
+GLuint VAO[2], VBO[2], EBO[2];
+int currentVao = 1;
+int nElements[2];
 
 // Codigo de los shaders, por ahora se crean en una cadena de texto
 // Shader de vertices
 const GLchar * vertexShaderSource = "#version 330 core\n"
 		"layout (location=0) in vec3 in_position;\n"
+		"layout(location = 1) in vec3 aColor;\n"
+		"out vec3 ourColor;\n"
 		"void main(){\n"
 		"gl_Position = vec4(in_position, 1.0);\n"
+		"ourColor = aColor;\n"
 		"}\0";
 // Shader de fragmento
 const GLchar * fragmentShaderSource = "#version 330 core\n"
 		"out vec4 color;\n"
+		"in vec3 ourColor;\n"
 		"void main(){\n"
-		"color = vec4(0.9, 0.4, 0.1, 1.0);\n"
+		"color = vec4(ourColor, 1.0);\n"
 		"}\0";
 
 // Implementacion de todas las funciones.
@@ -96,7 +109,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 
 	glViewport(0, 0, screenWidth, screenHeight);
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	glClearColor(0.7f, 0.7f, 0.7f, 0.0f);
 
 	// Compilacion de los shaders
 
@@ -116,11 +129,25 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Error al compilar el VERTEX_SHADER." << infoLog << std::endl;
 	}
 
+	// Se crea el id del fragment Shader
+	fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+	// Se agrega el codigo fuente al ID
+	glShaderSource(fragmentShaderID, 1, &fragmentShaderSource, NULL);
+	// Compilación de Fragment Shader
+	glCompileShader(fragmentShaderID);
+
+	glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		// En caso de error se obtiene el error y lanza mensaje con error
+		glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
+		std::cout << "Error al compilar el FRAGMENT_SHADER." << infoLog << std::endl;
+	}
+
 	// Programa con los shaders
 	shaderProgramID = glCreateProgram();
 	// Se agregan el vertex y fragment shader al program
 	glAttachShader(shaderProgramID, vertexShaderID);
-	// glAttachShader(shaderProgramID, fragmentShaderID);
+	glAttachShader(shaderProgramID, fragmentShaderID);
 	// Proceso de linkeo
 	glLinkProgram(shaderProgramID);
 	// Revision de error de linkeo del programa
@@ -131,32 +158,155 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 
 	// Se definen los vertices de la geometria a dibujar
-	GLfloat vertices[] = {-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0};
+	Vertex verticesEstrella[] =
+		{
+		{ { 0.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f }},
+		{ { 0.2f, 0.6f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ { 0.0f, 0.8f, 0.0f}, { 0.0f, 0.5f, 1.0f }},
+		{ {-0.2f, 0.6f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ {-0.6f, 0.2f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ {-0.8f, 0.0f, 0.0f}, { 0.0f, 0.5f, 1.0f }},
+		{ {-0.6f,-0.2f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ {-0.2f,-0.6f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ { 0.0f,-0.8f, 0.0f}, { 0.0f, 0.5f, 1.0f }},
+		{ { 0.2f,-0.6f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ { 0.6f,-0.2f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		{ { 0.8f, 0.0f, 0.0f}, { 0.0f, 0.5f, 1.0f }},
+		{ { 0.6f, 0.2f, 0.0f}, { 0.0f, 0.0f, 1.0f }}
+		};
+	unsigned int indicesEstrella[] = {
+		0, 1, 2,
+		2, 3, 0,
+		0, 4, 5,
+		5, 6, 0,
+		0, 7, 8,
+		8, 9, 0,
+		0, 10, 11,
+		11, 12, 0
+	};
 
+	nElements[0] = sizeof(indicesEstrella) / sizeof(int);
+
+	Vertex verticesCasa[] =
+	{
+		//Casa
+	{ {-0.4f,-0.5f, 0.0f}, { 1.0f, 1.0f, 1.0f }},
+	{ { 0.4f,-0.5f, 0.0f}, { 1.0f, 1.0f, 1.0f }},
+	{ { 0.4f, 0.2f, 0.0f}, { 1.0f, 1.0f, 1.0f }},
+	{ {-0.4f, 0.2f, 0.0f}, { 1.0f, 1.0f, 1.0f }},
+		//Chimenea
+	{ { 0.16f, 0.24f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.26f, 0.24f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.26f, 0.44f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.16f, 0.44f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+		//Chimeneatope
+	{ { 0.14f, 0.44f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.28f, 0.44f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.28f, 0.47f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+	{ { 0.14f, 0.47f, 0.0f}, { 0.8f, 0.2f, 0.2f }},
+		//techo
+	{ { 0.45f, 0.175f, 0.0f}, { 1.0f, 0.7f, 0.5f }},
+	{ { 0.0f, 0.5f, 0.0f}, { 1.0f, 0.7f, 0.5f }},
+	{ {-0.45f, 0.175f, 0.0f}, { 1.0f, 0.8f, 0.5f }},
+		//ventanaTecho
+	{ {-0.06f, 0.25f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+	{ { 0.06f, 0.25f, 0.0f}, { 0.5f, 0.5f, 1.0f }},
+	{ { 0.06f, 0.35f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+	{ {-0.06f, 0.35f, 0.0f}, { 0.5f, 0.5f, 1.0f }},
+		//Puerta
+	{ {-0.3f,-0.5f, 0.0f}, { 0.6f, 0.3f, 0.1f }},
+	{ {-0.1f,-0.5f, 0.0f}, { 0.6f, 0.3f, 0.1f }},
+	{ {-0.1f,-0.1f, 0.0f}, { 0.6f, 0.3f, 0.1f }},
+	{ {-0.3f,-0.1f, 0.0f}, { 0.6f, 0.3f, 0.1f }},
+		//Ventana
+	{ { 0.1f,-0.3f, 0.0f}, { 0.0f, 0.5f, 1.0f }},
+	{ { 0.3f,-0.3f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+	{ { 0.3f,-0.1f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+	{ { 0.1f,-0.1f, 0.0f}, { 0.0f, 0.0f, 1.0f }},
+		//PuertaInt
+	{ {-0.28f,-0.48f, 0.0f}, { 0.8f, 0.7f, 0.5f }},
+	{ {-0.12f,-0.48f, 0.0f}, { 0.8f, 0.7f, 0.5f }},
+	{ {-0.12f,-0.12f, 0.0f}, { 0.8f, 0.7f, 0.5f }},
+	{ {-0.28f,-0.12f, 0.0f}, { 0.8f, 0.7f, 0.5f }},
+		//VentanaRepisa
+	{ { 0.05f,-0.35f, 0.0f}, { 0.8f, 0.7f, 0.7f }},
+	{ { 0.35f,-0.35f, 0.0f}, { 0.8f, 0.7f, 0.7f }},
+	{ { 0.35f,-0.30f, 0.0f}, { 0.8f, 0.7f, 0.7f }},
+	{ { 0.05f,-0.30f, 0.0f}, { 0.8f, 0.7f, 0.7f }},
+	};
+
+	unsigned int indicesCasa[] = {
+		//Casa
+		0, 1, 2,
+		2, 3, 0,
+		//chimenea
+		4, 5, 6,
+		6, 7, 4,
+		//chimeneatope
+		8, 9, 10,
+		10, 11, 8,
+		//techo
+		12, 13, 14,
+		//ventanaTecho
+		15, 16, 17,
+		17, 18, 15,
+		//Puerta
+		19, 20, 21,
+		21, 22, 19,
+		//ventana
+		23, 24, 25,
+		25, 26, 23,
+		//puertaInt
+		27, 28, 29,
+		29, 30, 27,
+		//Ventana Repisa
+		31, 32, 33,
+		33, 34, 31
+		
+		
+	};
+
+	nElements[1] = sizeof(indicesCasa) / sizeof(int);
 	// Se crea el ID del VAO
 	/*
 	El VAO es un objeto que nos permite almacenar la estructura de nuestros datos,
 	Esto es de gran utilidad debido a que solo se configura la estructura una vez
 	y se puede utilizar en el loop de renderizado
 	*/
-	glGenVertexArrays(1, &VAO);
+	glGenVertexArrays(2, &VAO[0]);
 	// Cambiamos el estado para indicar que usaremos el id del VAO
-	glBindVertexArray(VAO);
+	glBindVertexArray(VAO[0]);
 	// Se crea el VBO (buffer de datos) asociado al VAO
-	glGenBuffers(1, &VBO);
+	glGenBuffers(2, &VBO[0]);
+	glGenBuffers(2, &EBO[0]);
 
 	// Cambiamos el estado para indicar que usaremos el id del VBO como Arreglo de vertices (GL_ARRAY_BUFFER)
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
 	// Copiamos los datos de los vertices a memoria del procesador grafico
 	//           TIPO DE BUFFER     TAMANIO          DATOS    MODO (No cambian los datos)
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesEstrella), verticesEstrella, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicesEstrella), indicesEstrella, GL_STATIC_DRAW);
 
 	// Se crea un indice para el atributo del vertice posicion, debe corresponder al location del atributo del shader
 	// indice del atributo, Cantidad de datos, Tipo de dato, Normalizacion, Tamanio del bloque (Stride), offset
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)0);
 	// Se habilita el atributo del vertice con indice 0 (posicion)
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
+	glBindVertexArray(VAO[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticesCasa), verticesCasa, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicesCasa), indicesCasa, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 	// Ya que se configuro, se regresa al estado original
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -178,15 +328,15 @@ void destroy() {
 
 	glDeleteProgram(shaderProgramID);
 
-	glBindVertexArray(VAO);
+	glBindVertexArray(VAO[0]);
 	glDisableVertexAttribArray(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER,VBO);
-	glDeleteBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER,VBO[0]);
+	glDeleteBuffers(1, &VBO[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(0);
-	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &VAO[0]);
 }
 
 void reshapeCallback(GLFWwindow* Window, int widthRes, int heightRes) {
@@ -200,6 +350,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 		switch (key) {
 		case GLFW_KEY_ESCAPE:
 			exitApp = true;
+			break;
+		case GLFW_KEY_E:
+			currentVao = 0;
+			break;
+		case GLFW_KEY_C:
+			currentVao = 1;
 			break;
 		}
 	}
@@ -243,12 +399,12 @@ void applicationLoop() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Esta linea esta comentada debido a que de momento no se usan los shaders
-		// glUseProgram(shaderProgramID);
+		glUseProgram(shaderProgramID);
 
 		// Se indica el buffer de datos y la estructura de estos utilizando solo el id del VAO
-		glBindVertexArray(VAO);
+		glBindVertexArray(VAO[currentVao]);
 		// Primitiva de ensamble
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, nElements[currentVao], GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
