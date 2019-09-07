@@ -17,6 +17,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// Shader include
+#include "Headers/Shader.h"
+
+Shader shader;
+
 int screenWidth;
 int screenHeight;
 
@@ -37,16 +42,17 @@ void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
 
-GLuint VAO, VBO;
+GLuint VAO, VBO, EBO;
+GLuint VAO2, VBO2, EBO2;
 
-typedef struct _Vertex{
+typedef struct _Vertex {
 	glm::vec3 m_Pos;
 	glm::vec3 m_Color;
 } Vertex;
 
 // Implementacion de todas las funciones.
 void init(int width, int height, std::string strTitle, bool bFullScreen) {
-	
+
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW" << std::endl;
 		exit(-1);
@@ -92,19 +98,57 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 
 	glViewport(0, 0, screenWidth, screenHeight);
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	shader.initialize("../Shaders/transformaciones.vs",
+		"../Shaders/transformaciones.fs");
 
 	// Se definen los vertices de la geometria a dibujar
-	Vertex vertices [] =
+	Vertex vertices[] =
 	{
 			{ glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
-			{ glm::vec3( 0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
-			{ glm::vec3( 0.5f,  0.5f,  0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
+			{ glm::vec3(0.5f,  0.5f,  0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
 			{ glm::vec3(-0.5f,  0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
-			{ glm::vec3( 0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
-			{ glm::vec3( 0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
+			{ glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
 			{ glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
 			{ glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f) }
+	};
+
+	Vertex vertices2[] =
+	{
+			{ glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
+			{ glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
+			{ glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
+			{ glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f) },
+			// Cara derecha
+			{ glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 1.0f) },
+			// Cara izquierda
+			{ glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(1.0f, 1.0f, 1.0f) },
+			{ glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 1.0f, 1.0f) },
+			{ glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 1.0f, 1.0f) },
+			{ glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 1.0f, 1.0f) },
+			// Cara superior
+			{ glm::vec3(-0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
+			{ glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
+			{ glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 1.0f) },
+			// Cara inferior
+			{ glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			{ glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			{ glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			{ glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 0.0f) },
+			// Cara trasera
+			{ glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
+			{ glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
+			{ glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
+			{ glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f) },
 	};
 
 	// Se definen los indices de las conexiones con los vertices.
@@ -123,6 +167,22 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		4, 6, 7
 	};
 
+	GLuint indices2[] =
+	{
+			0, 1, 2,
+			0, 2, 3,
+			4, 5, 6,
+			4, 6, 7,
+			8, 9, 10,
+			8, 10, 11,
+			12, 13, 14,
+			12, 14, 15,
+			16, 17, 18,
+			18, 19, 16,
+			20, 21, 22,
+			22, 23, 20
+	};
+
 	size_t bufferSize = sizeof(vertices);
 	size_t vertexSize = sizeof(vertices[0]);
 	size_t rgbOffset = sizeof(vertices[0].m_Pos);
@@ -135,6 +195,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Se crea el ID del VAO
 	// Se crea el VBO (buffer de datos) asociado al VAO
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 	/*
 	El VAO es un objeto que nos permite almacenar la estructura de nuestros datos,
 	Esto es de gran utilidad debido a que solo se configura la estructura una vez
@@ -150,10 +211,57 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	//           TIPO DE BUFFER     TAMANIO          DATOS    MODO (No cambian los datos)
 	glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices, GL_STATIC_DRAW);
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	// Se crea un indice para el atributo del vertice posicion, debe corresponder al location del atributo del shader
 	// indice del atributo, Cantidad de datos, Tipo de dato, Normalizacion, Tamanio del bloque (Stride), offset
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)rgbOffset);
+	// Se habilita el atributo del vertice con indice 0 (posicion)
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	// Ya que se configuro, se regresa al estado original
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	bufferSize = sizeof(vertices2);
+	vertexSize = sizeof(vertices2[0]);
+	rgbOffset = sizeof(vertices2[0].m_Pos);
+
+	std::cout << "bufferSize:" << bufferSize << std::endl;
+	std::cout << "vertexSize:" << vertexSize << std::endl;
+	std::cout << "rgbOffset:" << rgbOffset << std::endl;
+
+	// Se crea el ID del VAO
+	// Se crea el VBO (buffer de datos) asociado al VAO
+	glGenBuffers(1, &VBO2);
+	glGenBuffers(1, &EBO2);
+	/*
+	 El VAO es un objeto que nos permite almacenar la estructura de nuestros datos,
+	 Esto es de gran utilidad debido a que solo se configura la estructura una vez
+	 y se puede utilizar en el loop de renderizado
+	 */
+	glGenVertexArrays(1, &VAO2);
+	// Cambiamos el estado para indicar que usaremos el id del VAO
+	glBindVertexArray(VAO2);
+
+	// Cambiamos el estado para indicar que usaremos el id del VBO como Arreglo de vertices (GL_ARRAY_BUFFER)
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	// Copiamos los datos de los vertices a memoria del procesador grafico
+	//           TIPO DE BUFFER     TAMANIO          DATOS    MODO (No cambian los datos)
+	glBufferData(GL_ARRAY_BUFFER, bufferSize, vertices2, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2,
+		GL_STATIC_DRAW);
+
+	// Se crea un indice para el atributo del vertice posicion, debe corresponder al location del atributo del shader
+	// indice del atributo, Cantidad de datos, Tipo de dato, Normalizacion, Tamanio del bloque (Stride), offset
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize,
+		(GLvoid*)rgbOffset);
 	// Se habilita el atributo del vertice con indice 0 (posicion)
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
@@ -173,7 +281,7 @@ void destroy() {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 
-	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glDeleteBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -219,7 +327,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int state, int mod) {
 	}
 }
 
-bool processInput(bool continueApplication){
+bool processInput(bool continueApplication) {
 	if (exitApp || glfwWindowShouldClose(window) != 0) {
 		return false;
 	}
@@ -230,18 +338,241 @@ bool processInput(bool continueApplication){
 
 void applicationLoop() {
 	bool psi = true;
+	float angleRot = 0.0f;
 	while (psi) {
 		psi = processInput(true);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+			(float)screenWidth / (float)screenHeight, 0.02f, 100.0f);
+
+		angleRot += 0.02;
+
+		glm::mat4 view = glm::mat4(1.0f);
+		view = glm::translate(view, glm::vec3(0.0, 0.0, -3.0));
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 modelParent = glm::mat4(1.0f);
+		modelParent = glm::translate(modelParent, glm::vec3(-3.0, 0.6, -7.0));
+
+
+		//model = glm::rotate(model, glm::radians(angleRot), glm::vec3(0.0, 1.0, 0.0));
 
 		// Esta linea esta comentada debido a que de momento no se usan los shaders
 		// glUseProgram(shaderProgramID);
+		shader.turnOn();
 
+		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shader.setMatrix4("view", 1, false, glm::value_ptr(view));
+
+		// Primer cubo
+		model = glm::scale(modelParent, glm::vec3(1.5, 1.0, 0.5));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
 		// Se indica el buffer de datos y la estructura de estos utilizando solo el id del VAO
-		glBindVertexArray(VAO);
+		glBindVertexArray(VAO2);
 		// Primitiva de ensamble
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		// glDrawArrays(GL_TRIANGLES, 0, 6);
+		// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+
+		// Segundo cubo
+		model = glm::translate(modelParent, glm::vec3(0.0, 0.5, 0.0));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.2, 0.2, 0.25));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		//Cabeza
+		model = glm::translate(modelParent, glm::vec3(0.0, 0.8, 0.0));
+		model = glm::scale(model, glm::vec3(0.75, 0.5, 0.5));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		// Hombro Derecho
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(1.15, 0.4, 0.0));
+		model = glm::scale(model, glm::vec3(0.8, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		// Brazo Derecho
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(-1.35, -0.10, 0.0));
+		model = glm::scale(model, glm::vec3(0.4, 0.8, 0.5));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		// Hombro Izquierdo
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(-1.15, 0.4, 0.0));
+		model = glm::scale(model, glm::vec3(0.8, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		// Brazo Izquierdo
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(1.35, -0.10, 0.0));
+		model = glm::scale(model, glm::vec3(0.4, 0.8, 0.5));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		// Cinturon
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(0.0, -0.60, 0.0));
+		model = glm::scale(model, glm::vec3(1.5, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Pierna izquierda
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(-0.50, -1.20, 0.0));
+		model = glm::scale(model, glm::vec3(0.5, 1.0, 0.5));
+		
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Pie izquierda
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(-0.75, -1.80, 0.0));
+		model = glm::scale(model, glm::vec3(1.0, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		
+		//Pierna Derecha
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(0.50, -1.20, 0.0));
+		model = glm::scale(model, glm::vec3(0.5, 1.0, 0.5));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Pie Derecho
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(0.75, -1.80, 0.0));
+		model = glm::scale(model, glm::vec3(1.0, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Espada
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(2.15, -0.60, 0.0));
+		model = glm::scale(model, glm::vec3(2.0, 0.2, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(1.75, -0.60, 0.0));
+		model = glm::scale(model, glm::vec3(0.2, 0.7, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Perro
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(6.0, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(2.0, 0.5, 0.5));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		//Cola
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(7.2, 0.20, 0.0));
+		model = glm::scale(model, glm::vec3(0.4, 0.1, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Pata
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(5.25, -0.5, 0.0));
+		model = glm::scale(model, glm::vec3(0.5, 0.6, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Pata2
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(6.75, -0.5, 0.0));
+		model = glm::scale(model, glm::vec3(0.5, 0.6, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Cabeza
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(5.30, 0.5, 0.0));
+		model = glm::scale(model, glm::vec3(0.6, 0.6, 0.5));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Nariz
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(4.85, 0.4, 0.0));
+		model = glm::scale(model, glm::vec3(0.3, 0.1, 0.5));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		//Oreja
+		model = modelParent;
+		model = glm::translate(model, glm::vec3(5.55, 0.90, 0.0));
+		model = glm::scale(model, glm::vec3(0.1, 0.2, 0.5));
+
+		shader.setMatrix4("model", 1, false, glm::value_ptr(model));
+		glBindVertexArray(VAO2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
 
 		glfwSwapBuffers(window);
 	}
@@ -251,5 +582,5 @@ int main(int argc, char ** argv) {
 	init(800, 700, "Window GLFW", false);
 	applicationLoop();
 	destroy();
-	return 1;
+	return 0;
 }
