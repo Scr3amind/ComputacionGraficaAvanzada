@@ -41,7 +41,7 @@ float r1 = 0.0, r2 = 0.0, r3 = 0.0, r4 = 0.0, r5 = 0.0;
 GLFWwindow * window;
 
 Shader shaderColor;
-Shader shaderTexture;
+Shader shader;
 Shader shaderIluminacion;
 Shader shaderDirectional;
 Shader shaderPoint;
@@ -126,7 +126,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glEnable(GL_CULL_FACE);
 
 	shaderColor.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
-	shaderTexture.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
+	shader.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
 	shaderIluminacion.initialize("../Shaders/iluminacion_textura.vs",
 			"../Shaders/iluminacion_textura.fs");
 	shaderDirectional.initialize("../Shaders/iluminacion_textura.vs",
@@ -234,7 +234,7 @@ void destroy() {
 	box2.destroy();
 
 	shaderColor.destroy();
-	shaderTexture.destroy();
+	shader.destroy();
 	shaderIluminacion.destroy();
 }
 
@@ -330,8 +330,8 @@ void applicationLoop() {
 		shaderColor.setMatrix4("projection", 1, false, glm::value_ptr(projection));
 		shaderColor.setMatrix4("view", 1, false, glm::value_ptr(view));
 
-		shaderTexture.setMatrix4("projection", 1, false, glm::value_ptr(projection));
-		shaderTexture.setMatrix4("view", 1, false, glm::value_ptr(view));
+		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shader.setMatrix4("view", 1, false, glm::value_ptr(view));
 
 		shaderIluminacion.setMatrix4("projection", 1, false, glm::value_ptr(projection));
 		shaderIluminacion.setMatrix4("view", 1, false, glm::value_ptr(view));

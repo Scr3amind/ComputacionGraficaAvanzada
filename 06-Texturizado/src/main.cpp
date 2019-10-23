@@ -41,7 +41,7 @@ GLFWwindow * window;
 
 Shader shader;
 //Descomentar
-Shader shaderTexture;
+Shader shader;
 
 Sphere sphere1(20, 20);
 Cylinder cylinder1(4, 4, 0.5, 0.3);
@@ -122,18 +122,18 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
 
 	//Descomentar
-	shaderTexture.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
+	shader.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
 
 	sphere1.init();
-	sphere1.setShader(&shaderTexture);
+	sphere1.setShader(&shader);
 	sphere1.setColor(glm::vec4(0.3, 1.0, 0.3, 1.0));
 
 	cylinder1.init();
-	cylinder1.setShader(&shaderTexture);
+	cylinder1.setShader(&shader);
 	cylinder1.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
 	box1.init();
-	box1.setShader(&shaderTexture);
+	box1.setShader(&shader);
 	box1.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
 
 	box2.init();
@@ -310,11 +310,11 @@ void applicationLoop() {
 		shader.setMatrix4("view", 1, false, glm::value_ptr(view));
 
 		//Descomentar
-		shaderTexture.turnOn();
-		shaderTexture.setMatrix4("projection", 1, false, glm::value_ptr(projection));
-		shaderTexture.setMatrix4("view", 1, false, glm::value_ptr(view));
-		shaderTexture.setFloat("scaleUV", 3.0);
-		shaderTexture.setFloat("offsetX", offsetX);
+		shader.turnOn();
+		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shader.setMatrix4("view", 1, false, glm::value_ptr(view));
+		shader.setFloat("scaleUV", 3.0);
+		shader.setFloat("offsetX", offsetX);
 		offsetX += 0.001;
 
 		glm::mat4 model = glm::mat4(1.0f);
@@ -327,8 +327,8 @@ void applicationLoop() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Articulacion 1
-		shaderTexture.setFloat("scaleUV", 1.0);
-		shaderTexture.setFloat("offsetX", 0);
+		shader.setFloat("scaleUV", 1.0);
+		shader.setFloat("offsetX", 0);
 		glm::mat4 j1 = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f));
 		j1 = glm::rotate(j1, r2, glm::vec3(0.0, 1.0, 0.0));
 		j1 = glm::rotate(j1, r1, glm::vec3(0.0, 0.0, 1.0));
